@@ -55,11 +55,18 @@ func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request
 		MinReplicas: 1,
 		Name: "service4",
 	}
+	service5 := types.Service{
+		ID: 5,
+		Enable: true,
+		MinReplicas: 1,
+		Name: "service4",
+	}
 
 	services = append(services, service1)
 	services = append(services, service2)
 	services = append(services, service3)
 	services = append(services, service4)
+	services = append(services, service5)
 
 	data, err := json.Marshal(services)
 	if err != nil{
