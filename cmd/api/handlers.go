@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
 	// "github.com/setimozac/phoenix-backend/internal/types"
 	"net/http"
 )
@@ -31,6 +33,10 @@ func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
 func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request) {
 
 	services, err := app.DB.AllEnvManagers()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	data, err := json.Marshal(services)
 	if err != nil{
