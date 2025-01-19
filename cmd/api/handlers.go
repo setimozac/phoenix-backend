@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/setimozac/phoenix-backend/internal/types"
+	// "github.com/setimozac/phoenix-backend/internal/types"
 	"net/http"
 )
 
@@ -29,44 +29,8 @@ func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request) {
-	var services []types.Service
 
-	service1 := types.Service{
-		ID: 1,
-		Enable: true,
-		MinReplicas: 0,
-		Name: "service1",
-	}
-	service2 := types.Service{
-		ID: 2,
-		Enable: true,
-		MinReplicas: 0,
-		Name: "service2",
-	}
-	service3 := types.Service{
-		ID: 3,
-		Enable: false,
-		MinReplicas: 1,
-		Name: "service3",
-	}
-	service4 := types.Service{
-		ID: 4,
-		Enable: true,
-		MinReplicas: 1,
-		Name: "service4",
-	}
-	service5 := types.Service{
-		ID: 5,
-		Enable: true,
-		MinReplicas: 1,
-		Name: "service4",
-	}
-
-	services = append(services, service1)
-	services = append(services, service2)
-	services = append(services, service3)
-	services = append(services, service4)
-	services = append(services, service5)
+	services, err := app.DB.AllEnvManagers()
 
 	data, err := json.Marshal(services)
 	if err != nil{

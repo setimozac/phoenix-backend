@@ -20,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	// connect to DB
-	conn, err := app.connectToDB()
+	conn, err := app.connectToPGDB()
 	if err != nil {
 		log.Fatal("cannot connect to the db", err)
 	}
