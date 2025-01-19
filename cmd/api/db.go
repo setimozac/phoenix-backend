@@ -23,7 +23,7 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func (app *application) connectToDB() (*sql.DB, error) {
+func (app *application) connectToPGDB() (*sql.DB, error) {
 	connection, err := openDB(app.DSN)
 	if err != nil {
 		return nil, err

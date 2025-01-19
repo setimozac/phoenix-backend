@@ -8,9 +8,9 @@ import (
 
 type DataBaseRepo interface {
 	Connection() interface{}
-	AllEnvManagers() ([]*types.Service, error)
-	GetEnvManagerByName(name string) (*types.Service, error)
-	GetEnvManagerByIdFromDB(id int) (*types.Service, error)
+	AllEnvManagers() ([]*types.EnvManager, error)
+	GetEnvManagerByName(name string) (*types.EnvManager, error)
+	GetEnvManagerByIdFromDB(id int) (*types.EnvManager, error)
 }
 
 // type DataBaseRepoDynamoDB interface {
