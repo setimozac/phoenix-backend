@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       operator-controller: phoenix-envmanager-backend-db
+      app.kubernetes.io/name: phoenix-backend-db
   replicas: 1
   template:
     metadata:
@@ -17,9 +18,8 @@ spec:
         kubectl.kubernetes.io/default-container: phoenix-backend-db
       labels:
         operator-controller: phoenix-envmanager-backend-db
+        app.kubernetes.io/name: phoenix-backend-db
     spec:
-      securityContext:
-        runAsNonRoot: true
       containers:
       - image: phoenix-backend-db:latest
         name: phoenix-backend-db
@@ -33,16 +33,17 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-    volumes:
-      - name: postgres-data
-        persistentVolumeClaim:
-          claimName: postgres-pvc
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
 
 ---
 apiVersion: v1
-kind: persistentVolumeClaim
+kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
+  namespace: operators
   labels:
     operator-controller: phoenix-envmanager-backend-db
     app.kubernetes.io/name: phoenix-backend-db
