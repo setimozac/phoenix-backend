@@ -23,7 +23,7 @@ spec:
       containers:
       - command:
         - /app
-        - -dsn="host=http://phoenix-backend-db port=5432 user=postgres password=postgres dbname=env_manager timezone=UTC connect_timeout=5"
+        - -dsn=host=phoenix-backend-db.operators.svc.cluster.local port=5432 user=postgres password=postgres dbname=env_manager timezone=UTC connect_timeout=5
         image: phoenix-backend:latest
         name: phoenix-backend
         ports:
