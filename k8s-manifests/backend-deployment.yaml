@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phoenix-envmanager-backend
+  namespace: operators
+  labels:
+    operator-controller: phoenix-envmanager-backend
+    app.kubernetes.io/name: phoenix-backend
+spec:
+  selector:
+    matchLabels:
+      operator-controller: phoenix-envmanager-backend
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: phoenix-backend
+      labels:
+        operator-controller: phoenix-envmanager-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - command:
+        - /app
+        - -dsn="host=http://phoenix-backend-db port=5432 user=postgres password=postgres dbname=env_manager timezone=UTC connect_timeout=5"
+        image: phoenix-backend:latest
+        name: phoenix-backend
+        ports:
+          - containerPort: 8080
+        imagePullPolicy: Never
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health_check
+        #     port: 8081
+        #   initialDelaySeconds: 50
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /readyz
+        #     port: 8081
+        #   initialDelaySeconds: 50
+        #   periodSeconds: 20
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      serviceAccountName: phoenix-backend-serviceaccount
+      terminationGracePeriodSeconds: 10
+        
+
+
+      

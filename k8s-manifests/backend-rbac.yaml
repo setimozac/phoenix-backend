@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: phoenix-backend-clusterrole
+rules:
+- apiGroups: ["phoenix.setimozak"]
+  resources: ["envmanagers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["phoenix.setimozak"]
+  resources: ["envmanagers/finalizers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["phoenix.setimozak"]
+  resources: ["envmanagers/status"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: phoenix-backend-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: phoenix-backend-serviceaccount # Name is case sensitive
+  namespace: operators
+roleRef:
+  kind: ClusterRole
+  name: phoenix-backend-clusterrole
+  apiGroup: rbac.authorization.k8s.io
