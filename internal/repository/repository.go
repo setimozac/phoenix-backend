@@ -11,6 +11,7 @@ type DataBaseRepo interface {
 	AllEnvManagers() ([]*types.EnvManager, error)
 	GetEnvManagerByName(name string) (*types.EnvManager, error)
 	GetEnvManagerByIdFromDB(id int) (*types.EnvManager, error)
+	InsertEnvManager(em types.EnvManager) (int, error)
 }
 
 // type DataBaseRepoDynamoDB interface {
