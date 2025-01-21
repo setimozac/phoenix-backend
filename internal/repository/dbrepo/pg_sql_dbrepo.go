@@ -39,7 +39,7 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 		err := rows.Scan(
 			&envManager.ID,
 			&envManager.Name,
-			&envManager.MinReplicas,
+			&envManager.MinReplica,
 			&envManager.Enabled,
 			&envManager.UIEnabled,
 			&envManager.LastUpdate,
@@ -68,12 +68,13 @@ func (pg *PgDBRepo) InsertEnvManager(em types.EnvManager) (int, error) {
 	defer cancel()
 
 	var newID int
-	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update) VALUES($1,$2,$3,$4)`
+	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update) VALUES($1,$2,$3,$4) RETURNING id;`
 	em.LastUpdate = time.Now().Unix()
 
-	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplicas, em.Enabled, em.LastUpdate).Scan(&newID)
+	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplica, em.Enabled, em.LastUpdate).Scan(&newID)
+	log.Println("id:", newID)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	return newID, nil
 }
