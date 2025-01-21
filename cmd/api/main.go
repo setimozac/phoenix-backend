@@ -48,6 +48,18 @@ func main() {
 	flag.Parse()
 
 
+	// connect to DB
+	conn, err := app.connectToPGDB()
+	if err != nil {
+		log.Fatal("cannot connect to the db", err)
+	}
+
+	app.DB = &dbrepo.PgDBRepo{
+		DBConn: conn,
+	}
+	defer app.DB.Connection().(*sql.DB).Close()
+
+
 	// cluster congiguration
 	if app.K8sActive {
 		config, err := rest.InClusterConfig()
@@ -87,33 +99,18 @@ func main() {
 			AddFunc: func(obj interface{}) {
 				envManager := obj.(*unstructured.Unstructured)
 				log.Println("<=========== CR was added... ===========>")
-				// log.Println("CR was added: ", envManager)
-				// spec ,found, err := unstructured.NestedFieldCopy(envManager.Object, "spec")
-				// if err != nil {
-				// 	log.Println("unable to fetch spec from the object ", err)
-				// 	return
-				// }
 
-				// if !found {
-				// 	log.Println("unable to find spec.<field> ")
-				// 	return
-				// }
-				var spec Spec
-				err := runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["spec"].(map[string]interface{}), &spec)
+				var em types.EnvManager
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["spec"].(map[string]interface{}), &em)
 				if err != nil {
 					log.Println("unable to extract spec from the object.", err)
 				}
-				log.Println("obj.spec: ", spec)
-				var em types.EnvManager
-				em.Enabled = spec.Enabled
-				em.UIEnabled = spec.UIEnabled
-				em.LastUpdate = int64(spec.MinReplica)
-				em.Name = spec.Name
-				em.LastUpdate = spec.LastUpdate
+
 
 				id, err := app.DB.InsertEnvManager(em)
 				if err != nil {
 					log.Println("unable to insert envmanager into the db", err)
+					return
 				}
 				log.Println("obj inserted to the DB with ID: ", id)
 			},
@@ -147,16 +144,7 @@ func main() {
 	
 
 
-	// connect to DB
-	conn, err := app.connectToPGDB()
-	if err != nil {
-		log.Fatal("cannot connect to the db", err)
-	}
-
-	app.DB = &dbrepo.PgDBRepo{
-		DBConn: conn,
-	}
-	defer app.DB.Connection().(*sql.DB).Close()
+	
 
 
 	// start the server
