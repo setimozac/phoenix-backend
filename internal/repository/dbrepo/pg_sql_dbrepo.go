@@ -62,3 +62,18 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 func (pg *PgDBRepo) GetEnvManagerByIdFromDB(id int) (*types.EnvManager, error) {
 	return nil,nil
 }
+
+func (pg *PgDBRepo) InsertEnvManager(em types.EnvManager) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	var newID int
+	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update) VALUES($1,$2,$3,$4)`
+	em.LastUpdate = time.Now().Unix()
+
+	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplicas, em.Enabled, em.LastUpdate).Scan(&newID)
+	if err != nil {
+		return 0, nil
+	}
+	return newID, nil
+}

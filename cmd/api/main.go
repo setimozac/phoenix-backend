@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/setimozac/phoenix-backend/internal/repository/dbrepo"
+	"github.com/setimozac/phoenix-backend/internal/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -27,6 +28,14 @@ var (
 		Resource: "envmanagers",
 	}
 )
+
+type Spec struct {
+	Enabled bool `json:"enabled"`
+	MinReplica int `json:"minReplica"`
+	UIEnabled bool `json:"uiEnabled,omitempty"`
+	LastUpdate int64 `json:"lastUpdate,omitempty"`
+	Name string `json:"name"`
+}
 
 func main() {
 	// application config
@@ -77,12 +86,41 @@ func main() {
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				envManager := obj.(*unstructured.Unstructured)
-				log.Println("CR was added: ", envManager)
+				log.Println("<=========== CR was added... ===========>")
+				// log.Println("CR was added: ", envManager)
+				// spec ,found, err := unstructured.NestedFieldCopy(envManager.Object, "spec")
+				// if err != nil {
+				// 	log.Println("unable to fetch spec from the object ", err)
+				// 	return
+				// }
+
+				// if !found {
+				// 	log.Println("unable to find spec.<field> ")
+				// 	return
+				// }
+				var spec Spec
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["spec"].(map[string]interface{}), &spec)
+				if err != nil {
+					log.Println("unable to extract spec from the object.", err)
+				}
+				log.Println("obj.spec: ", spec)
+				var em types.EnvManager
+				em.Enabled = spec.Enabled
+				em.UIEnabled = spec.UIEnabled
+				em.LastUpdate = int64(spec.MinReplica)
+				em.Name = spec.Name
+				em.LastUpdate = spec.LastUpdate
+
+				id, err := app.DB.InsertEnvManager(em)
+				if err != nil {
+					log.Println("unable to insert envmanager into the db", err)
+				}
+				log.Println("obj inserted to the DB with ID: ", id)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// oldEnvManager := oldObj.(*unstructured.Unstructured)
 				newEnvManager := newObj.(*unstructured.Unstructured)
-				log.Println("CR was updated: ", newEnvManager)
+				log.Println("<=========== CR was updated: ===========>", newEnvManager)
 			},
 			DeleteFunc: func(obj interface{}) {
 				envManager, ok := obj.(*unstructured.Unstructured); if !ok{
