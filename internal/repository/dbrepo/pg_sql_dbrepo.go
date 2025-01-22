@@ -62,7 +62,7 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 
 	var envManager types.EnvManager
 	query := `
-		SELECT id, name, min_replicas, enabled, ui_enabled, last_update 
+		SELECT id, name, min_replicas, enabled, ui_enabled, last_update, namespace, cr_name
 		FROM env_managers
 		WHERE name = $1
 		`
@@ -75,6 +75,8 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 		&envManager.Enabled,
 		&envManager.UIEnabled,
 		&envManager.LastUpdate,
+		&envManager.Metadata.Namespace,
+		&envManager.Metadata.Name,
 	)
 	if err != nil{
 		return nil, err
@@ -108,10 +110,10 @@ func (pg *PgDBRepo) InsertEnvManager(em *types.EnvManager) (int, error) {
 	defer cancel()
 
 	var newID int
-	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update) VALUES($1,$2,$3,$4) RETURNING id;`
+	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update) VALUES($1,$2,$3,$4,$5,$6) RETURNING id;`
 	em.LastUpdate = time.Now().Unix()
 
-	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplica, em.Enabled, em.LastUpdate).Scan(&newID)
+	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplica, em.Enabled, em.LastUpdate, em.Metadata.Namespace, em.Metadata.Name).Scan(&newID)
 	log.Println("id:", newID)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
