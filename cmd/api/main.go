@@ -40,6 +40,7 @@ type Spec struct {
 func main() {
 	// application config
 	var app application
+	app.GRV = gvr
 
 
 	// read args from the cli
@@ -105,6 +106,15 @@ func main() {
 				if err != nil {
 					log.Println("unable to extract spec from the object.", err)
 				}
+
+				var metadata types.Metadata
+				err = runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["metadata"].(map[string]interface{}), &metadata)
+				if err != nil {
+					log.Println("unable to extract metadata from the object.", err)
+				}
+
+				em.Metadata = &metadata
+				log.Println("em with metadata: ", *em.Metadata)
 
 
 				id, err := app.DB.InsertEnvManager(&em)

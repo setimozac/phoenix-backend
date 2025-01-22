@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	// "github.com/setimozac/phoenix-backend/internal/types"
+	"github.com/setimozac/phoenix-backend/internal/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
@@ -48,44 +51,51 @@ func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request
 	w.Write(data)
 }
 
-// func (app *application) TestGetEnvManager(w http.ResponseWriter, r *http.Request) {
-// 	em := types.EnvManager{
-// 		Name: "service1",
-// 		MinReplica: 2,
-// 		Enabled: true,
-// 	}
+func (app *application) UpdateEnvManagers(w http.ResponseWriter, r *http.Request) {
+	if app.K8sClient != nil {
 
-// 	id, err := app.DB.InsertEnvManager(&em)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// 	log.Println("ID:", id)
+	} else {
+		
+	}
+}
 
-// 	envManager, err := app.DB.GetEnvManagerByName(em.Name)
-// 	if err != nil {
-// 		log.Println("GetEnvManagerByName(em.Name)",err)
-// 		return
-// 	}
+func (app *application) UpdateEnvManager(em *types.EnvManager) error {
+	namespace := em.Metadata.Namespace
+	crName := em.Metadata.Name
 
-// 	log.Println(envManager.Name)
-// 	envManager.Enabled = false
-// 	err = app.DB.UpdateEnvManager(envManager)
-// 	if err != nil{
-// 		fmt.Println("update",err)
-// 	}
+	currentCR, err := app.K8sClient.Resource(app.GRV).Namespace(namespace).Get(context.TODO(), crName,metav1.GetOptions{})
+	if err != nil {
+		log.Println("unable to get the CR", crName, err)
+		return err
+	}
 
-// 	updatedEnvManager, err := app.DB.GetEnvManagerByName(envManager.Name)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
+	spec, found, err := unstructured.NestedMap(currentCR.Object, "spec")
+	if err != nil {
+		log.Println("unable to get the spec",  err)
+		return err
+	}
+	if !found {
+		log.Println("spec not found", crName)
+		return nil
+	}
 
-// 	data, err := json.Marshal(updatedEnvManager)
-// 	if err != nil{
-// 		fmt.Println(err)
-// 	}
+	spec["enabled"] = em.Enabled
+	spec["lastUpdate"] = em.LastUpdate
+	spec["minReplica"] = em.MinReplica
+	spec["uiEnabled"] = em.UIEnabled
+	
+	// update the current CR with new spec
+	err = unstructured.SetNestedField(currentCR.Object, spec, "spec")
+	if err != nil {
+		log.Println("unable to update the spec", err)
+		return err
+	}
 
-// 	w.Header().Set("Content-Type", "Application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write(data)
-// }
+	updatedCR, err := app.K8sClient.Resource(app.GRV).Namespace(namespace).Update(context.TODO(), currentCR, metav1.UpdateOptions{})
+	if err != nil {
+		log.Println("unable to update the CR:",em.Metadata.Name, err)
+		return err
+	}
+	log.Println("cr was updated successfully", updatedCR.GetName())
+	return nil
+}

@@ -15,10 +15,3 @@ type DataBaseRepo interface {
 	UpdateEnvManager(em *types.EnvManager) error
 	DelteEnvManager(em *types.EnvManager) error
 }
-
-// type DataBaseRepoDynamoDB interface {
-// 	// Connection() *sql.DB
-// 	AllEnvManagers() ([]*types.Service, error)
-// 	GetEnvManagerByName(name string) (*types.Service, error)
-// 	GetEnvManagerByIdFromDB(id int) (*types.Service, error)
-// }

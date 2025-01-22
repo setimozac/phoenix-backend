@@ -6,6 +6,8 @@ CREATE TABLE env_managers (
   enabled BOOLEAN NOT NULL,
   ui_enabled BOOLEAN DEFAULT FALSE,
   last_update BIGINT NOT NULL,
+  namespace VARCHAR(255),
+  cr_name VARCHAR(255),
   UNIQUE(name)
 );
 
