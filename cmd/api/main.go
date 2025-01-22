@@ -132,6 +132,10 @@ func main() {
 				oldEm.Enabled = em.Enabled
 				oldEm.MinReplica = em.MinReplica
 
+				log.Println("em", em)
+				log.Println("oldEm", oldEm)
+
+
 				err = app.DB.UpdateEnvManager(oldEm)
 				if err != nil {
 					log.Println("unable to update the envmanager",oldEm.Name, err)

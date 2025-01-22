@@ -9,5 +9,4 @@ CREATE TABLE env_managers (
   UNIQUE(name)
 );
 
--- INSERT INTO env_managers VALUES(1, 'service1', 3, true, false, 1737328284)
--- INSERT INTO env_managers VALUES(2, 'service2', 1, true, true, 1737328288)
+-- psql -d env_manager -U postgres -W --command "SELECT * FROM env_managers;"
