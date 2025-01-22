@@ -107,7 +107,7 @@ func main() {
 				}
 
 
-				id, err := app.DB.InsertEnvManager(em)
+				id, err := app.DB.InsertEnvManager(&em)
 				if err != nil {
 					log.Println("unable to insert envmanager into the db", err)
 					return
@@ -118,20 +118,53 @@ func main() {
 				// oldEnvManager := oldObj.(*unstructured.Unstructured)
 				newEnvManager := newObj.(*unstructured.Unstructured)
 				log.Println("<=========== CR was updated: ===========>", newEnvManager)
+
+				var em types.EnvManager
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(newEnvManager.Object["spec"].(map[string]interface{}), &em)
+				if err != nil {
+					log.Println("unable to extract spec from the object.", err)
+				}
+				oldEm, err := app.DB.GetEnvManagerByName(em.Name)
+				if err != nil {
+					log.Println("unable to fetch envmanager from the db", err)
+					return
+				}
+				oldEm.Enabled = em.Enabled
+				oldEm.MinReplica = em.MinReplica
+
+				err = app.DB.UpdateEnvManager(oldEm)
+				if err != nil {
+					log.Println("unable to update the envmanager",oldEm.Name, err)
+					return
+				}
+				log.Println("obj was updated successfully. envmanager.name: ",oldEm.Name)
+				
 			},
 			DeleteFunc: func(obj interface{}) {
+				var em types.EnvManager
 				envManager, ok := obj.(*unstructured.Unstructured); if !ok{
 					tombStone, ok := obj.(cache.DeletedFinalStateUnknown); if !ok {
 						log.Println("failed to get the object from tombstone")
 						return
 					}
-					em, ok := tombStone.Obj.(*unstructured.Unstructured); if !ok {
+					envManager, ok := tombStone.Obj.(*unstructured.Unstructured); if !ok {
 						log.Println("tombstone contained object that is not unstructured")
 						return
 					}
-					log.Println("CR deleted: ", em)
+					err := runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["spec"].(map[string]interface{}), &em)
+					if err != nil {
+						log.Println("unable to extract spec from the object.", err)
+					}
+					app.DB.DelteEnvManager(&em)
+					log.Println("CR was deleted: ", em)
 				}
-				log.Println("CR was deleted: ", envManager)
+				
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(envManager.Object["spec"].(map[string]interface{}), &em)
+				if err != nil {
+					log.Println("unable to extract spec from the object.", err)
+				}
+				app.DB.DelteEnvManager(&em)
+				log.Println("CR was deleted: ", em)
 			},
 		})
 

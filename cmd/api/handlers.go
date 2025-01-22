@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 
 	// "github.com/setimozac/phoenix-backend/internal/types"
-	"net/http"
 )
 
 func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
@@ -47,3 +47,45 @@ func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
+// func (app *application) TestGetEnvManager(w http.ResponseWriter, r *http.Request) {
+// 	em := types.EnvManager{
+// 		Name: "service1",
+// 		MinReplica: 2,
+// 		Enabled: true,
+// 	}
+
+// 	id, err := app.DB.InsertEnvManager(&em)
+// 	if err != nil {
+// 		log.Println(err)
+// 	}
+// 	log.Println("ID:", id)
+
+// 	envManager, err := app.DB.GetEnvManagerByName(em.Name)
+// 	if err != nil {
+// 		log.Println("GetEnvManagerByName(em.Name)",err)
+// 		return
+// 	}
+
+// 	log.Println(envManager.Name)
+// 	envManager.Enabled = false
+// 	err = app.DB.UpdateEnvManager(envManager)
+// 	if err != nil{
+// 		fmt.Println("update",err)
+// 	}
+
+// 	updatedEnvManager, err := app.DB.GetEnvManagerByName(envManager.Name)
+// 	if err != nil {
+// 		log.Println(err)
+// 		return
+// 	}
+
+// 	data, err := json.Marshal(updatedEnvManager)
+// 	if err != nil{
+// 		fmt.Println(err)
+// 	}
+
+// 	w.Header().Set("Content-Type", "Application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write(data)
+// }

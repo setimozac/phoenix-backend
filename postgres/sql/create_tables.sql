@@ -5,7 +5,8 @@ CREATE TABLE env_managers (
   min_replicas INT NOT NULL,
   enabled BOOLEAN NOT NULL,
   ui_enabled BOOLEAN DEFAULT FALSE,
-  last_update BIGINT NOT NULL
+  last_update BIGINT NOT NULL,
+  UNIQUE(name)
 );
 
 -- INSERT INTO env_managers VALUES(1, 'service1', 3, true, false, 1737328284)
