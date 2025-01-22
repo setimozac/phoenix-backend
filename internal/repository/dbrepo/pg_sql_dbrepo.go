@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/setimozac/phoenix-backend/internal/types"
 )
 
@@ -56,14 +57,53 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 	return envManagers,nil
 }
 func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) {
-	var envManager *types.EnvManager
-	return envManager,nil
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	var envManager types.EnvManager
+	query := `
+		SELECT id, name, min_replicas, enabled, ui_enabled, last_update 
+		FROM env_managers
+		WHERE name = $1
+		`
+
+	row := pg.DBConn.QueryRowContext(ctx, query, name)
+	err := row.Scan(
+		&envManager.ID,
+		&envManager.Name,
+		&envManager.MinReplica,
+		&envManager.Enabled,
+		&envManager.UIEnabled,
+		&envManager.LastUpdate,
+	)
+	if err != nil{
+		return nil, err
+	}
+	return &envManager, nil
 }
-func (pg *PgDBRepo) GetEnvManagerByIdFromDB(id int) (*types.EnvManager, error) {
+
+func (pg *PgDBRepo) GetEnvManagerById(id int) (*types.EnvManager, error) {
 	return nil,nil
 }
 
-func (pg *PgDBRepo) InsertEnvManager(em types.EnvManager) (int, error) {
+func (pg *PgDBRepo) UpdateEnvManager(em *types.EnvManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	stmt := `
+		UPDATE env_managers
+		SET min_replicas = $1, enabled = $2
+		WHERE name = $3;
+	`
+
+	_, err := pg.DBConn.ExecContext(ctx, stmt, em.MinReplica, em.Enabled, em.Name)
+	if err != nil{
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDBRepo) InsertEnvManager(em *types.EnvManager) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -74,7 +114,29 @@ func (pg *PgDBRepo) InsertEnvManager(em types.EnvManager) (int, error) {
 	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplica, em.Enabled, em.LastUpdate).Scan(&newID)
 	log.Println("id:", newID)
 	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			if pgErr.Code == "23505" {
+				log.Println("duplicate key(name) error for:", em.Name)
+			}
+		}
 		return 0, err
 	}
 	return newID, nil
+}
+
+func (pg *PgDBRepo) DelteEnvManager(em *types.EnvManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	stmt := `
+		DELETE FROM env_managers WHERE name = $1;
+	`
+
+	_, err := pg.DBConn.ExecContext(ctx, stmt, em.Name)
+	if err != nil{
+		log.Println("unable to delete a record. envManager: ", em.Name)
+		return err
+	}
+
+	return nil
 }

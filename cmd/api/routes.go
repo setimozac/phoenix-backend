@@ -16,6 +16,7 @@ func (app *application) routes() http.Handler {
 
 	mux.Get("/", app.Hello)
 	mux.Get("/services", app.GetAllEnvManagers)
+	// mux.Get("/test-add-get", app.TestGetEnvManager)
 
 	return mux
 }
