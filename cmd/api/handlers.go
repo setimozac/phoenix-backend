@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 
@@ -23,14 +22,7 @@ func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
 		Version: "0.0.1",
 	}
 
-	data, err := json.Marshal(payload)
-	if err != nil{
-		fmt.Println(err)
-	}
-
-	w.Header().Set("Content-Type", "Application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_ = app.WriteJSON(w, http.StatusOK, payload)
 }
 
 func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request) {
@@ -38,17 +30,11 @@ func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request
 	services, err := app.DB.AllEnvManagers()
 	if err != nil {
 		log.Println(err)
+		app.ErrorJSON(w, errors.New("bad request"))
 		return
 	}
 
-	data, err := json.Marshal(services)
-	if err != nil{
-		fmt.Println(err)
-	}
-
-	w.Header().Set("Content-Type", "Application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_ = app.WriteJSON(w, http.StatusOK, services)
 }
 
 func (app *application) UpdateEnvManagers(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +45,7 @@ func (app *application) UpdateEnvManagers(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) UpdateEnvManager(em *types.EnvManager) error {
+func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
 	namespace := em.Metadata.Namespace
 	crName := em.Metadata.Name
 
