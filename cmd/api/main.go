@@ -114,7 +114,7 @@ func main() {
 				}
 
 				em.Metadata = &metadata
-				log.Println("em with metadata: ", *em.Metadata)
+				log.Println("em with metadata: ", em.Metadata)
 
 
 				id, err := app.DB.InsertEnvManager(&em)
