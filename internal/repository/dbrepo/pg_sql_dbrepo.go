@@ -26,7 +26,7 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 	var envManagers []*types.EnvManager
 
 	query := `
-		SELECT id, name, min_replicas, enabled, ui_enabled, last_update FROM env_managers
+		SELECT id, name, min_replicas, enabled, ui_enabled, last_update, namespace, cr_name FROM env_managers
 	`
 	rows, err := pg.DBConn.QueryContext(ctx, query)
 	if err != nil {
@@ -34,6 +34,8 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 		return nil, err
 	}
 	defer rows.Close()
+
+	var namespace, crName string
 
 	for rows.Next() {
 		var envManager types.EnvManager
@@ -44,10 +46,16 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 			&envManager.Enabled,
 			&envManager.UIEnabled,
 			&envManager.LastUpdate,
+			&namespace,
+			&crName,
 		)
 		if err != nil {
 			log.Println(err)
 			return nil, err
+		}
+		envManager.Metadata = &types.Metadata{
+			Name: crName,
+			Namespace: namespace,
 		}
 
 		envManagers = append(envManagers, &envManager)
