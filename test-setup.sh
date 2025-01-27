@@ -6,3 +6,18 @@
 
 #docker build -t phoenix-backend-db:latest .
 #kind load docker-image phoenix-backend-db:latest --name phoenix-dev
+
+
+
+
+
+
+
+
+
+
+
+
+
+# docker build -t setimo/phoenix-backend:0.0.2 .
+# docker push setimo/phoenix-backend:0.0.2
