@@ -29,11 +29,11 @@ spec:
         ports:
           - containerPort: 8080
         imagePullPolicy: Never
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - "ALL"
+        # securityContext:
+        #   allowPrivilegeEscalation: false
+        #   capabilities:
+        #     drop:
+        #     - "ALL"
         # livenessProbe:
         #   httpGet:
         #     path: /health_check
