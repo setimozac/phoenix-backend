@@ -14,9 +14,10 @@ func (app *application) routes() http.Handler {
 	mux.Use(middleware.Recoverer)
 	mux.Use(app.enableCORS)
 
-	mux.Get("/", app.Hello)
+	mux.Get("/health", app.Hello)
 	mux.Get("/services", app.GetAllEnvManagers)
-	// mux.Get("/test-add-get", app.TestGetEnvManager)
+
+	mux.Put("/services/update", app.UpdateEnvManagers)
 
 	return mux
 }

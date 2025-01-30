@@ -68,7 +68,10 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
+	log.Println("From GetEnvManagerByName", name)
 	var envManager types.EnvManager
+	var metaNamespace string
+	var metaName string
 	query := `
 		SELECT id, name, min_replicas, enabled, ui_enabled, last_update, namespace, cr_name
 		FROM env_managers
@@ -83,11 +86,15 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 		&envManager.Enabled,
 		&envManager.UIEnabled,
 		&envManager.LastUpdate,
-		&envManager.Metadata.Namespace,
-		&envManager.Metadata.Name,
+		&metaNamespace,
+		&metaName,
 	)
 	if err != nil{
 		return nil, err
+	}
+	envManager.Metadata = &types.Metadata{
+		Name: metaName,
+		Namespace: metaNamespace,
 	}
 	return &envManager, nil
 }
@@ -99,13 +106,15 @@ func (pg *PgDBRepo) GetEnvManagerById(id int) (*types.EnvManager, error) {
 func (pg *PgDBRepo) UpdateEnvManager(em *types.EnvManager) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
+
+	em.LastUpdate = time.Now().Unix()
 	stmt := `
 		UPDATE env_managers
-		SET min_replicas = $1, enabled = $2
-		WHERE name = $3;
+		SET min_replicas = $1, enabled = $2, ui_enabled=$3, last_update=$4
+		WHERE name = $5;
 	`
 
-	_, err := pg.DBConn.ExecContext(ctx, stmt, em.MinReplica, em.Enabled, em.Name)
+	_, err := pg.DBConn.ExecContext(ctx, stmt, em.MinReplica, em.Enabled,em.UIEnabled, em.LastUpdate, em.Name)
 	if err != nil{
 		return err
 	}

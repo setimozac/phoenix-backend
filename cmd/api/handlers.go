@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net/http"
 
 	"github.com/setimozac/phoenix-backend/internal/types"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func (app *application) Hello(w http.ResponseWriter, r *http.Request) {
@@ -38,50 +35,38 @@ func (app *application) GetAllEnvManagers(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) UpdateEnvManagers(w http.ResponseWriter, r *http.Request) {
-	if app.K8sClient != nil {
-
-	} else {
-		
+	if r.Method != http.MethodPut {
+		log.Println("Invalide HTTP method")
+		app.ErrorJSON(w, errors.New("olny http put method is allowed"), http.StatusMethodNotAllowed)
+		return
 	}
-}
+	var envManagers []types.EnvManager
+	var failedToUpdate []int
 
-func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
-	namespace := em.Metadata.Namespace
-	crName := em.Metadata.Name
-
-	currentCR, err := app.K8sClient.Resource(app.GRV).Namespace(namespace).Get(context.TODO(), crName,metav1.GetOptions{})
+	err := app.ReadJSON(w, r, &envManagers)
 	if err != nil {
-		log.Println("unable to get the CR", crName, err)
-		return err
+		log.Println("Invalide request BODY")
+		app.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	log.Println("[]envManagers", envManagers)
+	for _, item := range envManagers {
+		if app.K8sClient != nil {
+			err = app.UpdateEnvManagerInCluster(&item)
+			if err != nil {
+				log.Println("Failed updating EnvManager:", item)
+				failedToUpdate = append(failedToUpdate, item.ID)
+			}
+		} else {
+			log.Println("just for offline testing - UpdateEnvManagers()", item)
+			err = app.DB.UpdateEnvManager(&item)
+			if err != nil {
+				log.Println("Failed updating EnvManager:", item)
+			}
+		}
 	}
 
-	spec, found, err := unstructured.NestedMap(currentCR.Object, "spec")
-	if err != nil {
-		log.Println("unable to get the spec",  err)
-		return err
-	}
-	if !found {
-		log.Println("spec not found", crName)
-		return nil
-	}
-
-	spec["enabled"] = em.Enabled
-	spec["lastUpdate"] = em.LastUpdate
-	spec["minReplica"] = em.MinReplica
-	spec["uiEnabled"] = em.UIEnabled
+	app.WriteJSON(w, http.StatusAccepted, failedToUpdate)
 	
-	// update the current CR with new spec
-	err = unstructured.SetNestedField(currentCR.Object, spec, "spec")
-	if err != nil {
-		log.Println("unable to update the spec", err)
-		return err
-	}
-
-	updatedCR, err := app.K8sClient.Resource(app.GRV).Namespace(namespace).Update(context.TODO(), currentCR, metav1.UpdateOptions{})
-	if err != nil {
-		log.Println("unable to update the CR:",em.Metadata.Name, err)
-		return err
-	}
-	log.Println("cr was updated successfully", updatedCR.GetName())
-	return nil
 }
+

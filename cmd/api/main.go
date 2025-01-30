@@ -134,6 +134,8 @@ func main() {
 				if err != nil {
 					log.Println("unable to extract spec from the object.", err)
 				}
+				log.Println("em", em)
+				log.Println("em.Name", em.Name)
 				oldEm, err := app.DB.GetEnvManagerByName(em.Name)
 				if err != nil {
 					log.Println("unable to fetch envmanager from the db", err)
