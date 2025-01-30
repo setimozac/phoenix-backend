@@ -12,3 +12,10 @@ CREATE TABLE env_managers (
 );
 
 -- psql -d env_manager -U postgres -W --command "SELECT * FROM env_managers;"
+
+
+
+-- events JSONB
+-- INSERT INTO env_managers(name, min_replicas, enabled, last_update, namespace, cr_name, events) VALUES(...., '["BAU", "team1-test", "team2-test1", "team2-test2"]'::jsonb);
+-- SELECT FROM env_managers WHERE events @> '["team2-test1"]'::jsonb;
+-- CREATE INDEX events_gin_idx ON env_managers USING GIN (events);

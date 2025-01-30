@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -40,8 +41,9 @@ func (app *application) ReadJSON(w http.ResponseWriter, r *http.Request, data in
 
 	dec := json.NewDecoder(r.Body)
 	
-	err := dec.Decode(data)
+	err := dec.Decode(&data)
 	if err != nil {
+		log.Println("================> ",err)
 		return err
 	}
 
