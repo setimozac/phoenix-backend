@@ -34,3 +34,11 @@ services:
     depends_on: 
       - postgres
       - pgadmin
+
+  frontend:
+    image: setimo/phoenix-frontend:0.0.4
+    env_file:
+      - .env.compose
+    container_name: frontend
+    ports:
+      - "3030:80"
