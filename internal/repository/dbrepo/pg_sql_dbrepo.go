@@ -107,7 +107,7 @@ func (pg *PgDBRepo) UpdateEnvManager(em *types.EnvManager) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	em.LastUpdate = time.Now().Unix()
+	*em.LastUpdate = time.Now().Unix()
 	stmt := `
 		UPDATE env_managers
 		SET min_replicas = $1, enabled = $2, ui_enabled=$3, last_update=$4
@@ -128,7 +128,7 @@ func (pg *PgDBRepo) InsertEnvManager(em *types.EnvManager) (int, error) {
 
 	var newID int
 	stmt := `INSERT INTO env_managers(name, min_replicas, enabled, last_update, namespace, cr_name) VALUES($1,$2,$3,$4,$5,$6) RETURNING id;`
-	em.LastUpdate = time.Now().Unix()
+	*em.LastUpdate = time.Now().Unix()
 
 	err := pg.DBConn.QueryRowContext(ctx, stmt, em.Name, em.MinReplica, em.Enabled, em.LastUpdate, em.Metadata.Namespace, em.Metadata.Name).Scan(&newID)
 	log.Println("id:", newID)
