@@ -8,9 +8,15 @@ type EnvManager struct {
 	Name string `json:"name"`
 	LastUpdate int64 `json:"lastUpdate,omitempty"`
 	*Metadata `json:"metadata"`
+	Events []string `json:"events"`
 }
 
 type Metadata struct {
 	Name string `json:"name"`
 	Namespace string `json:"namespace"`
+}
+
+type Event struct {
+	Name string `json:"name"`
+	ServiceName string `json:"service_name"`
 }

@@ -29,10 +29,13 @@ func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
 		return nil
 	}
 
-	spec["enabled"] = em.Enabled
-	spec["lastUpdate"] = em.LastUpdate
-	spec["minReplica"] = em.MinReplica
-	spec["uiEnabled"] = em.UIEnabled
+	var newEnvManager types.EnvManager
+	DeepCopyInto(em, &newEnvManager)
+	spec["enabled"] = newEnvManager.Enabled
+	spec["lastUpdate"] = newEnvManager.LastUpdate
+	spec["minReplica"] = int64(newEnvManager.MinReplica)
+	spec["uiEnabled"] = newEnvManager.UIEnabled
+	
 	
 	// update the current CR with new spec
 	err = unstructured.SetNestedField(currentCR.Object, spec, "spec")
@@ -48,4 +51,14 @@ func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
 	}
 	log.Println("cr was updated successfully", updatedCR.GetName())
 	return nil
+}
+
+func DeepCopyInto(in *types.EnvManager, out *types.EnvManager) {
+
+	// out = new(types.EnvManager)
+	out.Enabled = in.Enabled
+	out.UIEnabled= in.UIEnabled
+	out.LastUpdate = in.LastUpdate
+	out.MinReplica = in.MinReplica
+
 }

@@ -11,6 +11,13 @@ CREATE TABLE env_managers (
   UNIQUE(name)
 );
 
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  event_name VARCHAR(255) NOT NULL,
+  service_name VARCHAR(255) NOT NULL,
+  CONSTRAINT fk_events_manager FOREIGN KEY (service_name) REFERENCES env_managers(name) ON DELETE CASCADE
+);
+
 -- psql -d env_manager -U postgres -W --command "SELECT * FROM env_managers;"
 
 

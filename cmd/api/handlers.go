@@ -70,3 +70,27 @@ func (app *application) UpdateEnvManagers(w http.ResponseWriter, r *http.Request
 	
 }
 
+func (app *application) TestAddEnvManager(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.Println("Invalide HTTP method")
+		app.ErrorJSON(w, errors.New("olny http POST method is allowed"), http.StatusMethodNotAllowed)
+		return
+	}
+	var envManager types.EnvManager
+
+	err := app.ReadJSON(w, r, &envManager)
+	if err != nil {
+		log.Println("Invalide request BODY")
+		app.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	log.Println("[]envManagers", envManager)
+
+	_, err = app.DB.InsertEnvManager(&envManager)
+	if err != nil {
+		log.Println(err)
+		app.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+}
+

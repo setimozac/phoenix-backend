@@ -14,4 +14,5 @@ type DataBaseRepo interface {
 	InsertEnvManager(em *types.EnvManager) (int, error)
 	UpdateEnvManager(em *types.EnvManager) error
 	DelteEnvManager(em *types.EnvManager) error
+	AddEvents(events []string, servceName string) error
 }
