@@ -19,5 +19,7 @@ func (app *application) routes() http.Handler {
 
 	mux.Put("/services/update", app.UpdateEnvManagers)
 
+	mux.Post("/test-add", app.TestAddEnvManager)
+
 	return mux
 }

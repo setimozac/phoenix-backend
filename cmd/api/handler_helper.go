@@ -33,7 +33,7 @@ func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
 	DeepCopyInto(em, &newEnvManager)
 	spec["enabled"] = newEnvManager.Enabled
 	spec["lastUpdate"] = newEnvManager.LastUpdate
-	spec["minReplica"] = newEnvManager.MinReplica
+	spec["minReplica"] = int64(newEnvManager.MinReplica)
 	spec["uiEnabled"] = newEnvManager.UIEnabled
 	
 	
@@ -54,30 +54,11 @@ func (app *application) UpdateEnvManagerInCluster(em *types.EnvManager) error {
 }
 
 func DeepCopyInto(in *types.EnvManager, out *types.EnvManager) {
-	*out = *in
 
-	if in.Enabled != nil {
-		in, out := &in.Enabled, &out.Enabled
-		*out = new(bool)
-		*out = *in
-	}
-
-	if in.MinReplica != nil {
-		in, out := &in.MinReplica, &out.MinReplica
-		*out = new(int32)
-		*out = *in
-	}
-
-	if in.UIEnabled != nil {
-		in, out := &in.UIEnabled, &out.UIEnabled
-		*out = new(bool)
-		*out = *in
-	}
-
-	if in.LastUpdate != nil {
-		in, out := &in.LastUpdate, &out.LastUpdate
-		*out = new(int64)
-		*out = *in
-	}
+	// out = new(types.EnvManager)
+	out.Enabled = in.Enabled
+	out.UIEnabled= in.UIEnabled
+	out.LastUpdate = in.LastUpdate
+	out.MinReplica = in.MinReplica
 
 }
