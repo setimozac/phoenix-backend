@@ -30,7 +30,7 @@ func (pg *PgDBRepo) AllEnvManagers() ([]*types.EnvManager, error){
 	query := `
 		SELECT em.id, em.name, em.min_replicas, em.enabled, em.ui_enabled, em.last_update, em.namespace, em.cr_name, COALESCE(array_agg(e.event_name), '{}') as events
 		FROM env_managers em
-		JOIN events e ON em.name = e.service_name
+		LEFT JOIN events e ON em.name = e.service_name
 		GROUP BY em.id, em.name, em.min_replicas, em.enabled, em.ui_enabled, em.last_update, em.namespace, em.cr_name;
 	`
 	rows, err := pg.DBConn.QueryContext(ctx, query)
@@ -84,12 +84,19 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 	var envManager types.EnvManager
 	var metaNamespace string
 	var metaName string
+	// query := `
+	// 	SELECT id, name, min_replicas, enabled, ui_enabled, last_update, namespace, cr_name
+	// 	FROM env_managers
+	// 	WHERE name = $1
+	// 	`
 	query := `
-		SELECT id, name, min_replicas, enabled, ui_enabled, last_update, namespace, cr_name
-		FROM env_managers
-		WHERE name = $1
+		SELECT em.id, em.name, em.min_replicas, em.enabled, em.ui_enabled, em.last_update, em.namespace, em.cr_name, COALESCE(array_agg(e.event_name), '{}') as events
+		FROM env_managers em
+		LEFT JOIN events e ON em.name = e.service_name
+		WHERE em.name = $1
+		GROUP BY em.id, em.name, em.min_replicas, em.enabled, em.ui_enabled, em.last_update, em.namespace, em.cr_name;
 		`
-
+		var events pgtype.TextArray
 	row := pg.DBConn.QueryRowContext(ctx, query, name)
 	err := row.Scan(
 		&envManager.ID,
@@ -100,6 +107,7 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 		&envManager.LastUpdate,
 		&metaNamespace,
 		&metaName,
+		&events,
 	)
 	if err != nil{
 		return nil, err
@@ -107,6 +115,11 @@ func (pg *PgDBRepo) GetEnvManagerByName(name string) (*types.EnvManager, error) 
 	envManager.Metadata = &types.Metadata{
 		Name: metaName,
 		Namespace: metaNamespace,
+	}
+	if events.Status == pgtype.Present {
+		for _, elem := range events.Elements {
+			envManager.Events = append(envManager.Events, elem.String)
+		}
 	}
 	return &envManager, nil
 }
@@ -127,6 +140,11 @@ func (pg *PgDBRepo) UpdateEnvManager(em *types.EnvManager) error {
 	`
 
 	_, err := pg.DBConn.ExecContext(ctx, stmt, em.MinReplica, em.Enabled,em.UIEnabled, em.LastUpdate, em.Name)
+	if err != nil{
+		return err
+	}
+
+	err = pg.UpdateEvents(em.Events, em.Name)
 	if err != nil{
 		return err
 	}
@@ -153,11 +171,14 @@ func (pg *PgDBRepo) InsertEnvManager(em *types.EnvManager) (int, error) {
 		}
 		return 0, err
 	}
-	err = pg.AddEvents(em.Events, em.Name)
-	if err != nil {
-		log.Println(err)
-		return newID, err
+	if len(em.Events) > 0 {
+		err = pg.AddEvents(em.Events, em.Name)
+		if err != nil {
+			log.Println(err)
+			return newID, err
+		}
 	}
+	
 	return newID, nil
 }
 
@@ -184,15 +205,12 @@ func (pg *PgDBRepo) AddEvents(events []string, servceName string) error {
 
 	stmt := "INSERT INTO events (event_name, service_name) Values "
 	var values []interface{}
-	// placeholders := []string{}
 
 	for i, event := range events {
-		// placeholders = append(placeholders, fmt.Sprintf("($%d, $%d),", i*2+1, i*2+2))
 		stmt += fmt.Sprintf("($%d, $%d),", i*2+1, i*2+2)
 		values = append(values, event, servceName)
 	}
 
-	// stmt += fmt.Sprint(placeholders)  		// Append all the placeholders
 	stmt = stmt[:len(stmt)-1]        		 // Remove last comma
 	log.Println(stmt)
 	log.Println(events)
@@ -204,4 +222,53 @@ func (pg *PgDBRepo) AddEvents(events []string, servceName string) error {
 	}
 
 	return nil
+}
+
+func (pg *PgDBRepo) UpdateEvents(events []string, servceName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	tx, err := pg.DBConn.BeginTx(ctx, nil)
+	if err != nil {	
+		return err
+	}
+
+	stmt := `DELETE FROM events WHERE service_name = $1`
+
+	_, err = tx.Exec(stmt, servceName)
+	if err != nil {
+		log.Panicln("failed to delete old events", err)
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+
+	err = pg.AddEvents(events, servceName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pg *PgDBRepo) GetAllEvents() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	
+	var events []string
+	query := `SELECT DISTINCT event_name FROM events`
+
+	rows, err := pg.DBConn.QueryContext(ctx, query)
+	if err != nil {
+		return nil,err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var eventName string
+		if err := rows.Scan(&eventName); err != nil {
+			return nil,err
+		}
+		events = append(events, eventName)
+	}
+
+	return events,nil
 }

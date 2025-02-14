@@ -16,6 +16,7 @@ func (app *application) routes() http.Handler {
 
 	mux.Get("/health", app.Hello)
 	mux.Get("/services", app.GetAllEnvManagers)
+	mux.Get("/events", app.GetAllEvents)
 
 	mux.Put("/services/update", app.UpdateEnvManagers)
 

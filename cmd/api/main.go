@@ -144,6 +144,7 @@ func main() {
 				oldEm.Enabled = em.Enabled
 				oldEm.MinReplica = em.MinReplica
 				oldEm.UIEnabled = em.UIEnabled
+				oldEm.Events = em.Events
 
 				log.Println("em", em)
 				log.Println("oldEm", oldEm)
